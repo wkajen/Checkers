@@ -1,14 +1,15 @@
-// #include <includes.h>
 #include "game.h"
+// #include "squares.h"
 #include <SDL2/SDL.h>
-#include <iostream>
 
 Game::Game() {}
 
 Game::~Game() 
 {
-    SDL_DestroyTexture(this->pawnTexture);
-    SDL_FreeSurface(this->pawnSurf);
+    SDL_DestroyTexture(this->whitePawnTexture);
+    SDL_DestroyTexture(this->blackPawnTexture);
+    SDL_FreeSurface(this->whitePawnSurf);
+    SDL_FreeSurface(this->blackPawnSurf);
     SDL_DestroyTexture(this->squareTexture);
     SDL_FreeSurface(this->squareSurf);
     SDL_DestroyTexture(this->chessboardTexture);
@@ -16,51 +17,6 @@ Game::~Game()
     SDL_DestroyRenderer(this->renderer);
     SDL_DestroyWindow(this->window);
     SDL_Quit();
-}
-
-void Game::initFun()
-{
-    this->quit = false;
-    SDL_Init(SDL_INIT_VIDEO);
-    this->window = SDL_CreateWindow("Checkers", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, this->width, this->height, 0);  // 0 -> SDL_WINDOW_ALLOW_HIGHDPI);
-    this->renderer = SDL_CreateRenderer(this->window, -1, SDL_RENDERER_ACCELERATED);
-
-    if (NULL == this->window)
-    {
-        std::cout << "Cannot create window" << SDL_GetError() << std::endl;
-        // return 1;
-    }
-
-    this->chessboardSurf = SDL_LoadBMP_RW(SDL_RWFromFile("img/chessboard.bmp", "rb"), 1);
-    this->chessboardTexture = SDL_CreateTextureFromSurface(this->renderer, this->chessboardSurf);
-
-    this->x = 37; //200;
-    this->y = 616;
-    // this->oneMove = 82;
-
-    // this->pawnSurf = SDL_LoadBMP_RW(SDL_RWFromFile("img/black_pawn.bmp", "rb"), 1);
-    this->pawnSurf = SDL_LoadBMP_RW(SDL_RWFromFile("img/white_pawn.bmp", "rb"), 1);
-    this->pawnTexture = SDL_CreateTextureFromSurface(this->renderer, this->pawnSurf);
-    for (int i = 0; i < 8; i++)
-    {
-        this->pawnPos[i].x = x + i*this->oneMove; 
-        if (i%2 == 0) this->pawnPos[i].y = y; 
-        else this->pawnPos[i].y = y - this->oneMove; 
-        this->pawnPos[i].w = w;  
-        this->pawnPos[i].h = h;
-    }
-    this->squareSurf = SDL_LoadBMP_RW(SDL_RWFromFile("img/square.bmp", "rb"), 1);
-    this->squareTexture = SDL_CreateTextureFromSurface(this->renderer, this->squareSurf);
-    this->squarePos[0].x = this->pawnPos[1].x - this->squareDist; 
-    this->squarePos[0].y = this->pawnPos[1].y - (this->squareDist + 5);
-    this->squarePos[0].w = 80;
-    this->squarePos[0].h = 81;
-
-    this->squarePos[1].x = this->pawnPos[1].x + (this->squareDist - 8); 
-    this->squarePos[1].y = this->pawnPos[1].y - (this->squareDist + 5);
-    this->squarePos[1].w = 80;
-    this->squarePos[1].h = 81;
-
 }
 
 void Game::run()
@@ -80,56 +36,46 @@ void Game::run()
                     this->mouseY = this->WindowEvent.motion.y;
 
                 case SDL_MOUSEBUTTONDOWN:  //loop only when button is pressed
-
-                    for (int i = 0; i < 8; i++)
+                    if( this->WindowEvent.button.button == SDL_BUTTON_LEFT)
                     {
-                        if (isClicked(i)) 
+                        if (this->isWhiteTurn)
                         {
-                                // this->pawnClicked = i;
-                            // square on the left
-                            this->squarePos[0].x = this->pawnPos[i].x - 87; 
-                            this->squarePos[0].y = this->pawnPos[i].y - 91;
-                            if ( isSquareFree(i, this->pawnPos[i].x - this->oneMove, this->pawnPos[i].y - this->oneMove) )
+                            for (int i = 0; i < 8; i++)
                             {
-                                this->squarePos[0].w = this->oneMove;
-                                this->squarePos[0].h = this->oneMove;
+                                if (pawnClicked(i)) 
+                                {
+                                    squareDisp(i);
+                                }
                             }
-                            else
-                            {
-                                this->squarePos[0].w = 0;
-                                this->squarePos[0].h = 0;          
-                            }
-                            
-                            // square on the right
-                            this->squarePos[1].x = this->pawnPos[i].x + 77; 
-                            this->squarePos[1].y = this->pawnPos[i].y - 91;
-                            if ( isSquareFree(i, this->pawnPos[i].x + this->oneMove, this->pawnPos[i].y - this->oneMove) )
-                            {
-                                this->squarePos[1].w = this->oneMove;
-                                this->squarePos[1].h = this->oneMove;
-                            }
-                            else
-                            {
-                                this->squarePos[1].w = 0;
-                                this->squarePos[1].h = 0;          
-                            }                            
-
                         }
-                    }
+                        else
+                        {
+                            for (int i = 8; i < 16; i++)
+                            {
+                                if (pawnClicked(i)) 
+                                {
+                                    squareDisp(i);
+                                }
+                            }
+                        }
 
+                        pawnUpdate(this->pawnClickedNo);
+                    }
+                    
                 // if( this->WindowEvent.key.keysym.sym == SDLK_ESCAPE ) this->quit = true;
             }
-
         }
 
         SDL_RenderClear(this->renderer);
         SDL_RenderCopy(this->renderer, this->chessboardTexture, NULL, NULL);
         for (int i = 0; i < 8; i++) 
         {
-            SDL_RenderCopy(this->renderer, this->pawnTexture, NULL, &this->pawnPos[i]);
+            SDL_RenderCopy(this->renderer, this->whitePawnTexture, NULL, &this->pawnPos[i]);
+            SDL_RenderCopy(this->renderer, this->blackPawnTexture, NULL, &this->pawnPos[i+8]);
         }
         if(isPawnClicked) 
         {
+            this->isUpdateReady = true;
             SDL_RenderCopy(this->renderer, this->squareTexture, NULL, &this->squarePos[0]);
             SDL_RenderCopy(this->renderer, this->squareTexture, NULL, &this->squarePos[1]);
         }
@@ -137,38 +83,329 @@ void Game::run()
     }
 }
 
-bool Game::isSquareFree(int i, int xPos, int yPos)
+/*
+int Game::isSquareFree_new(int pawnNo, bool isRight, bool backward)
 {
-    if ( xPos > 10 && xPos < (this->width - this->oneMove) )  // *2
+    int xPos;
+    int yPos; 
+    if (!isRight)  // on the left
+        xPos = this->pawnPos[pawnNo].x - this->oneMove;
+    else    // on the right
+        xPos = this->pawnPos[pawnNo].x + this->oneMove;
+    if ( (this->isWhiteTurn && !backward) || (!this->isWhiteTurn && backward) )
+        yPos = this->pawnPos[pawnNo].y - this->oneMove;
+    else
+        yPos = this->pawnPos[pawnNo].y + this->oneMove;
+
+    if ( xPos > 10 && yPos > 10 && xPos < (this->width - this->oneMove) ) 
+    {
+        for (int sqrPos = 0; sqrPos < 32; sqrPos++) 
+        {
+            if (squares.squaresAll[sqrPos/4][sqrPos%4].x == xPos && squares.squaresAll[sqrPos/4][sqrPos%4].y == yPos)
+            {
+                if( (squares.squaresAll[sqrPos/4][sqrPos%4].occupied == 1 && this->isWhiteTurn) || (squares.squaresAll[sqrPos/4][sqrPos%4].occupied == 2 && !this->isWhiteTurn) )
+                    return 0;
+                else if ( (squares.squaresAll[sqrPos/4][sqrPos%4].occupied == 1 && !this->isWhiteTurn) || (squares.squaresAll[sqrPos/4][sqrPos%4].occupied == 2 && this->isWhiteTurn) )
+                {
+                    if (squares.squaresAll[sqrPos/4][sqrPos%4].occupied )// --------------------------
+                    {
+                        
+                        return -1;
+                    }
+                    else
+                        // this->isCapture = false;
+                        return 0;
+                    // return -1;
+                }
+                    
+                else
+                    return 1;
+            }
+        }
+        return 1;
+    }
+    return 0;
+}
+*/
+
+
+int Game::isSquareFree(int pawnNo, bool isRight)
+{
+    int xPos;
+    int yPos; 
+    if (!isRight)  // on the left
+        xPos = this->pawnPos[pawnNo].x - this->oneMove;
+    else    // on the right
+        xPos = this->pawnPos[pawnNo].x + this->oneMove;
+    if (this->isWhiteTurn)
+        yPos = this->pawnPos[pawnNo].y - this->oneMove;
+    else
+        yPos = this->pawnPos[pawnNo].y + this->oneMove;
+
+    if ( xPos > 10 && yPos > 10 && xPos < (this->width - this->oneMove) )  // *2
     {
         for (int j = 0; j < 8; j++) 
         {
-            if (xPos == this->pawnPos[j].x && yPos == this->pawnPos[j].y )
+            if (xPos == this->pawnPos[j].x && yPos == this->pawnPos[j].y)
             {
-                return false;
+                if (this->isWhiteTurn)
+                    return 0;
+                else
+                {
+                    if (isSquareFree(j, isRight))
+                    {
+                        this->isCapture = true;
+                        if (!isRight)
+                            {this->newPosX = pawnPos[j].x - this->oneMove;}
+                        else
+                            {this->newPosX = pawnPos[j].x + this->oneMove;}
+                        this->newPosY = pawnPos[j].y + this->oneMove;
+                        return -1;
+                    }
+                    else
+                        // this->isCapture = false;
+                        return 0;
+                }
             }
         }
-        return true;
+        for (int j = 8; j < 16; j++) 
+        {
+            if (xPos == this->pawnPos[j].x && yPos == this->pawnPos[j].y)
+            {
+                if (this->isWhiteTurn)
+                {
+                    if (isSquareFree(j, isRight))
+                    {
+                        this->isCapture = true;
+                        if (!isRight)
+                            {this->newPosX = pawnPos[j].x - this->oneMove;}
+                        else
+                            {this->newPosX = pawnPos[j].x + this->oneMove;}
+                        this->newPosY = pawnPos[j].y - this->oneMove;
+                        return -1;
+                    }
+                    else
+                        return 0;
+                }
+                else
+                    return 0;
+            }
+        }
+        return 1;
     }
-    return false;
+    return 0;
 }
 
-bool Game::isClicked(int no)
+
+bool Game::pawnClicked(int no)
 {
-    if( this->WindowEvent.button.button == SDL_BUTTON_LEFT && ( this->mouseX >= this->pawnPos[no].x && this->mouseX <= this->pawnPos[no].x + this->pawnPos[no].w ) &&
+    if( ( this->mouseX >= this->pawnPos[no].x && this->mouseX <= this->pawnPos[no].x + this->pawnPos[no].w ) &&
     ( this->mouseY >= this->pawnPos[no].y && this->mouseY <= this->pawnPos[no].y + this->pawnPos[no].h ) )
-        if (this->isPawnClicked) 
+    {
+        if (this->isPawnClicked == true) 
         {
             this->isPawnClicked = false;
-            return true;
+            pawnClickedNo = -1;
+            this->isUpdateReady = false;
         }
         else 
         {
             this->isPawnClicked = true;
-            return true;
+            pawnClickedNo = no;
+            
         }
-        
-    else 
-        return false;
+        // std::cout << pawnClickedNo << std::endl;  //just for debugging
+        return true;
+    }    
+    return false;
 }
 
+
+void Game::squareDisp_new(int pawnNo)
+{
+    int row;
+    int col;
+    for (int i = 0; i < 32; i++)
+    {
+        if (pawnPos[pawnNo].x == squares.squaresAll[i/4][i%4].x && pawnPos[pawnNo].y == squares.squaresAll[i/4][i%4].y)
+        {
+            row = i/4;
+            col = i%4;
+        }
+    }
+
+    int sqrNo = 0;
+
+    if (this->isWhiteTurn)
+    {
+        int currOccupant = 1;
+        // square on the left
+        if (col > 0)
+            currOccupant = squares.squaresAll[row+1][col-1].occupied;
+        else if (row % 2 == 1)
+            {currOccupant = (squares.squaresAll[row+1][col].occupied);}
+
+        switch (currOccupant)
+        {
+            case 0: // square free
+            {
+                this->squarePos[sqrNo].w = this->oneMove;
+                this->squarePos[sqrNo].h = this->oneMove;
+                this->squarePos[sqrNo].x = squares.squaresAll[row][col].x - 5;
+                this->squarePos[sqrNo].y = squares.squaresAll[row][col].y - 10;
+                break;
+            }
+            case 2: // enemy
+            {
+                
+                break;
+            }
+            default: // no work
+            {
+                break;
+            }
+        }
+    }
+    
+  
+}
+// ======================================
+
+
+
+void Game::squareDisp(int pawnNo)
+{
+    this->squarePos[0].w = this->oneMove;
+    this->squarePos[0].h = this->oneMove;
+    this->squarePos[1].w = this->oneMove;
+    this->squarePos[1].h = this->oneMove;
+
+    // square on the left    (int pawnNo, bool isRight, bool backward)
+    switch ( isSquareFree(pawnNo, false) )
+    {
+    case 1:     // left square is free
+        this->squarePos[0].x = this->pawnPos[pawnNo].x - 87; 
+        if (pawnNo < 8)
+            this->squarePos[0].y = this->pawnPos[pawnNo].y - 92;
+        else
+            this->squarePos[0].y = this->pawnPos[pawnNo].y + 71;
+        break;
+
+    case -1:    // there is an oppponent on the left square
+        this->squarePos[0].x = this->pawnPos[pawnNo].x - (this->oneMove + 87); 
+        if (pawnNo < 8)
+            this->squarePos[0].y = this->pawnPos[pawnNo].y - (this->oneMove + 92);
+        else
+            this->squarePos[0].y = this->pawnPos[pawnNo].y + (this->oneMove + 71);
+        break;
+    
+    default:    // left square is already occupied
+        this->squarePos[0].w = 0;
+        this->squarePos[0].h = 0;  
+        break;
+    }
+
+    // square on the right
+    switch ( isSquareFree(pawnNo, true) )
+    {
+    case 1:     // right square is free
+        this->squarePos[1].x = this->pawnPos[pawnNo].x + 77; 
+        if (pawnNo < 8)
+            this->squarePos[1].y = this->pawnPos[pawnNo].y - 92;
+        else
+            this->squarePos[1].y = this->pawnPos[pawnNo].y + 71;
+        break;
+
+    case -1:    // there is an oppponent on the right square
+        this->squarePos[1].x = this->pawnPos[pawnNo].x + (this->oneMove + 77); 
+        if (pawnNo < 8)
+            this->squarePos[1].y = this->pawnPos[pawnNo].y - (this->oneMove + 92);
+        else
+            this->squarePos[1].y = this->pawnPos[pawnNo].y + (this->oneMove + 71);
+        break;
+    
+    default:    // right square is already occupied
+        this->squarePos[1].w = 0;
+        this->squarePos[1].h = 0;  
+        break;
+    }
+
+}
+
+void Game::pawnUpdate_2(int pawnNo)
+{
+    if (this->isUpdateReady && this->isPawnClicked && pawnNo >= 0)
+    {
+        for (int no = 0; no < 2; no++)
+        {
+            if( ( this->mouseX >= this->squarePos[no].x && this->mouseX <= this->squarePos[no].x + this->squarePos[no].w ) &&
+            ( this->mouseY >= this->squarePos[no].y && this->mouseY <= this->squarePos[no].y + this->squarePos[no].h ) )
+            {
+                this->pawnPos[pawnNo].x = this->squarePos[no].x + 5;   // <------------------------------------------------  here TODO
+                this->pawnPos[pawnNo].y = this->squarePos[no].y + 10;
+
+                if (this->isWhiteTurn)
+                    {this->isWhiteTurn = false;}
+                else
+                    {this->isWhiteTurn = true;}
+                this->isPawnClicked = false;
+                this->pawnClickedNo = -1;
+                
+            }
+        }
+        
+    }
+}
+
+void Game::pawnUpdate(int pawnNo)
+{
+    if (this->isUpdateReady && this->isPawnClicked && pawnNo >= 0)
+    {
+        for (int no = 0; no < 2; no++)
+        {
+            if( ( this->mouseX >= this->squarePos[no].x && this->mouseX <= this->squarePos[no].x + this->squarePos[no].w ) &&
+            ( this->mouseY >= this->squarePos[no].y && this->mouseY <= this->squarePos[no].y + this->squarePos[no].h ) )
+            {
+                if (this->isWhiteTurn)
+                {
+                    if (this->mouseX < this->pawnPos[pawnNo].x)
+                    {
+                        this->pawnPos[pawnNo].x -= this->oneMove;
+                        this->pawnPos[pawnNo].y -= this->oneMove;
+
+                    }
+                    else if (this->mouseX > this->pawnPos[pawnNo].x)
+                    {
+                        this->pawnPos[pawnNo].x += this->oneMove;
+                        this->pawnPos[pawnNo].y -= this->oneMove;
+
+                    }
+                    this->isWhiteTurn = false;
+                }
+                else
+                {
+                    if (this->mouseX < this->pawnPos[pawnNo].x)
+                    {
+                        this->pawnPos[pawnNo].x -= this->oneMove;
+                        this->pawnPos[pawnNo].y += this->oneMove;
+                        // this->isPawnClicked = false;
+                        // this->pawnClickedNo = -1;
+                    }
+                    else if (this->mouseX > this->pawnPos[pawnNo].x)
+                    {
+                        this->pawnPos[pawnNo].x += this->oneMove;
+                        this->pawnPos[pawnNo].y += this->oneMove;
+                        // this->isPawnClicked = false;
+                        // this->pawnClickedNo = -1;
+                    }
+                    this->isWhiteTurn = true;
+                }
+
+                this->isPawnClicked = false;
+                this->pawnClickedNo = -1;
+                
+            }
+        }
+        
+    }
+}

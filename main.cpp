@@ -1,5 +1,6 @@
-#include <SDL2/SDL.h>
+// #include <SDL2/SDL.h>
 #include "src/game.h"
+// #include "src/squares.h"
 
 int main(int argc, char *argv[])
 {
